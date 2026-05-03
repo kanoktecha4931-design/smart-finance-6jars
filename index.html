@@ -29,7 +29,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; // สำคัญ: ต้องนำ URL จากการ Deploy มาวาง
 
-    async function submitData() {
+  async function submitData() {
       const input = document.getElementById('userInput');
       const status = document.getElementById('status');
       if (!input.value) return;
@@ -44,14 +44,24 @@
           body: JSON.stringify({ source: 'web', message: input.value })
         });
         const result = await response.json();
-        status.className = 'success';
-        status.innerText = '✅ บันทึกสำเร็จ!\n' + result.data.map(i => `- ${i.item}: ${i.amount}บ.`).join('\n');
-        input.value = '';
+        
+        if (result.status === "success" && result.data) {
+          status.className = 'success';
+          status.innerText = '✅ บันทึกสำเร็จ!\n' + result.data.map(i => `- ${i.item}: ${i.amount}บ.`).join('\n');
+          input.value = '';
+        } else {
+          // หาก AI ส่ง Error กลับมา ให้แสดงข้อความเตือนที่ได้รับ
+          status.style.backgroundColor = '#f8d7da';
+          status.style.color = '#721c24';
+          status.innerText = '❌ ' + (result.message |
+
+| 'AI ไม่สามารถประมวลผลได้');
+        }
       } catch (e) {
-        status.innerText = '❌ เกิดข้อผิดพลาด: ' + e;
+        status.innerText = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e;
       }
     }
-
+    
     async function getSummary() {
       const status = document.getElementById('status');
       status.style.display = 'block';
