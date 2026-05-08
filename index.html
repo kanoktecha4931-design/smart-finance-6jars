@@ -1,35 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>6 Jars Finance App</title>
-  <style>
-    body { font-family: 'Prompt', sans-serif; background-color: #f8f9fa; padding: 20px; display: flex; justify-content: center; }
-   .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-    h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-    button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; }
-    button:hover { background-color: #218838; }
-    #status { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; display: none; }
-   .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-   .loading { color: #6c757d; text-align: center; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>🏺 บันทึกเงิน 6 Jars</h2>
-    <p style="font-size: 14px; color: #666; text-align: center;">พิมพ์เช่น: "รับเงินเดือน 45000" หรือ "อาหารสุนัข 1200"</p>
-    <input type="text" id="userInput" placeholder="พิมพ์รายการที่นี่...">
-    <button onclick="submitData()" id="btn">บันทึกข้อมูล</button>
-    <button onclick="getSummary()" style="margin-top: 10px; background-color: #17a2b8;">ดูสรุปเดือนนี้</button>
-    <div id="status"></div>
-  </div>
-
-  <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; // สำคัญ: ต้องนำ URL จากการ Deploy มาวาง
-
-  async function submitData() {
+    async function submitData() {
       const input = document.getElementById('userInput');
       const status = document.getElementById('status');
       if (!input.value) return;
@@ -61,22 +30,3 @@
         status.innerText = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e;
       }
     }
-    
-    async function getSummary() {
-      const status = document.getElementById('status');
-      status.style.display = 'block';
-      status.className = 'loading';
-      status.innerText = 'กำลังคำนวณสรุป...';
-      try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({ source: 'web', message: 'สรุป' })
-        });
-        const result = await response.json();
-        status.className = 'success';
-        status.innerText = result.message;
-      } catch (e) { status.innerText = '❌ เกิดข้อผิดพลาด'; }
-    }
-  </script>
-</body>
-</html>
