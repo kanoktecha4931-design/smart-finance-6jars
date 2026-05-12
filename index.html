@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="th" translate="no">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,7 @@
    .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
     h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
     input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-    button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; width: 100%; }
+    button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
     button:hover { background-color: #218838; }
     #status { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; display: none; }
    .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
@@ -23,12 +23,12 @@
     <p style="font-size: 14px; color: #666; text-align: center;">พิมพ์เช่น: "รับเงินเดือน 45000" หรือ "อาหารสุนัข 1200"</p>
     <input type="text" id="userInput" placeholder="พิมพ์รายการที่นี่...">
     <button onclick="submitData()">บันทึกข้อมูล</button>
-    <button onclick="getSummary()" style="margin-top: 10px; background-color: #17a2b8;">ดูสรุปเดือนนี้</button>
+    <button onclick="getSummary()" style="background-color: #17a2b8;">ดูสรุปเดือนนี้</button>
     <div id="status"></div>
   </div>
 
   <script>
-    // *** สำคัญ: นำ URL เว็บแอปจาก Google Apps Script มาวางตรงนี้ ***
+    // *** นำ URL เว็บแอปจาก Google Apps Script มาวางตรงนี้ ***
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
 
     async function submitData() {
@@ -57,7 +57,7 @@
         }
       } catch (e) {
         status.className = 'error';
-        status.innerText = '❌ เกิดข้อผิดพลาด: ' + e;
+        status.innerText = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e;
       }
     }
 
