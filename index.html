@@ -3,33 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>6 Jars Finance App</title>
+  <title>6 Jars Private Tracker</title>
   <style>
-    body { font-family: sans-serif; background-color: #f8f9fa; padding: 20px; display: flex; justify-content: center; }
-   .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-    h2 { color: #2c3e50; text-align: center; margin-bottom: 20px; }
+    body { font-family: sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+  .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+    h2 { color: #2c3e50; text-align: center; margin-bottom: 5px; }
+  .subtitle { font-size: 12px; color: #d9534f; text-align: center; margin-bottom: 20px; font-weight: bold; }
     input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
     button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
     button:hover { background-color: #218838; }
-    #status { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; display: none; }
-   .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-   .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-   .loading { color: #6c757d; text-align: center; }
+  .btn-danger { background-color: #dc3545; }
+    #status { padding: 10px; border-radius: 8px; font-size: 14px; text-align: center; display: none; margin-bottom: 15px; }
+  .summary-box { background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; line-height: 1.6; }
+  .history-box { margin-top: 20px; font-size: 13px; color: #555; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>🏺 บันทึกเงิน 6 Jars</h2>
-    <p style="font-size: 14px; color: #666; text-align: center;">พิมพ์เช่น: "รับเงินเดือน 45000" หรือ "อาหารสุนัข 1200"</p>
-    <input type="text" id="userInput" placeholder="พิมพ์รายการที่นี่...">
-    <button onclick="submitData()">บันทึกข้อมูล</button>
-    <button onclick="getSummary()" style="background-color: #17a2b8;">ดูสรุปเดือนนี้</button>
+    <h2>🏺 6 Jars AI Tracker</h2>
+    <div class="subtitle">🔒 ข้อมูลบันทึกในเครื่องคุณเท่านั้น (100% Private)</div>
+
+    <input type="text" id="userInput" placeholder="เช่น รับเงินเดือน 15000 ซื้ออาหารหมา 500" onkeypress="if(event.key === 'Enter') submitData()">
+    <button onclick="submitData()">บันทึกรายการ</button>
     <div id="status"></div>
+
+    <div class="summary-box" id="summaryView"></div>
+
+    <div class="history-box">
+      <strong>📝 ประวัติล่าสุด (5 รายการ)</strong>
+      <ul id="historyList" style="padding-left: 20px;"></ul>
+      <button class="btn-danger" onclick="clearData()" style="padding: 8px; font-size: 12px; margin-top: 10px;">ล้างข้อมูลทั้งหมด</button>
+    </div>
   </div>
 
   <script>
-    // *** นำ URL เว็บแอปจาก Google Apps Script มาวางตรงนี้ ***
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
+    // ⚠️ สำคัญมาก: นำ URL จาก Google Apps Script (ที่ลงท้ายด้วย /exec) มาใส่ตรงนี้
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec";
+
+    let myTransactions = JSON.parse(localStorage.getItem('my_6jars_data')) || new Array();
+    renderDashboard();
 
     async function submitData() {
       const input = document.getElementById('userInput');
@@ -37,46 +49,89 @@
       if (!input.value) return;
 
       status.style.display = 'block';
-      status.className = 'loading';
-      status.innerText = 'กำลังประมวลผลด้วย AI...';
+      status.style.color = '#004085';
+      status.style.backgroundColor = '#cce5ff';
+      status.innerText = 'กำลังให้ AI แยกโหล...';
 
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({ source: 'web', message: input.value })
         });
+
         const result = await response.json();
-        
+
         if (result.status === "success") {
-          status.className = 'success';
-          status.innerText = '✅ บันทึกสำเร็จ!\n' + (result.data? result.data.map(i => `- ${i.item}: ${i.amount}บ.`).join('\n') : "");
+          result.data.forEach(item => {
+            myTransactions.push({
+              date: new Date().toLocaleString('th-TH'),
+              item: item.item,
+              amount: item.amount,
+              type: item.type,
+              jar_type: item.jar_type
+            });
+          });
+
+          localStorage.setItem('my_6jars_data', JSON.stringify(myTransactions));
+
+          status.style.color = '#155724';
+          status.style.backgroundColor = '#d4edda';
+          status.innerText = '✅ บันทึกลงโหลสำเร็จ!';
           input.value = '';
+          renderDashboard();
         } else {
-          status.className = 'error';
+          status.style.color = '#721c24';
+          status.style.backgroundColor = '#f8d7da';
           status.innerText = '❌ ' + result.message;
         }
-      } catch (e) {
-        status.className = 'error';
-        status.innerText = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e;
+      } catch (error) {
+        status.style.color = '#721c24';
+        status.style.backgroundColor = '#f8d7da';
+        status.innerText = '❌ เกิดข้อผิดพลาดในการเชื่อมต่อ (Failed to fetch) โปรดตรวจสอบ SCRIPT_URL';
       }
     }
 
-    async function getSummary() {
-      const status = document.getElementById('status');
-      status.style.display = 'block';
-      status.className = 'loading';
-      status.innerText = 'กำลังคำนวณสรุป...';
-      try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({ source: 'web', message: 'สรุป' })
-        });
-        const result = await response.json();
-        status.className = 'success';
-        status.innerText = result.message;
-      } catch (e) { 
-        status.className = 'error';
-        status.innerText = '❌ ไม่สามารถดึงสรุปได้'; 
+    function renderDashboard() {
+      let income = 0;
+      let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LTSPS: 0, GIVE: 0, INCOME: 0 };
+
+      myTransactions.forEach(t => {
+        if (t.jar_type === 'INCOME' || t.type === 'Income') {
+          income += t.amount;
+        } else if (jars[t.jar_type]!== undefined) {
+          jars[t.jar_type] += t.amount;
+        }
+      });
+
+      const playLimit = income * 0.10;
+      const advice = jars.PLAY > playLimit
+      ? `<br><span style="color:red;">⚠️ โหล PLAY เกินงบ! (เป้าหมาย ${(playLimit).toLocaleString()}บ.)</span>`
+        : `<br><span style="color:green;">✅ คุมเงินได้เยี่ยมมาก</span>`;
+
+      document.getElementById('summaryView').innerHTML = `
+        <strong>💰 รายรับรวม:</strong> ${income.toLocaleString()} บ.<br><br>
+        🏠 <strong>NEC (55%):</strong> ${jars.NEC.toLocaleString()} บ.<br>
+        🎮 <strong>PLAY (10%):</strong> ${jars.PLAY.toLocaleString()} บ.<br>
+        📈 <strong>FFA (10%):</strong> ${jars.FFA.toLocaleString()} บ.<br>
+        📚 <strong>EDU (10%):</strong> ${jars.EDU.toLocaleString()} บ.<br>
+        🏦 <strong>LTSPS (10%):</strong> ${jars.LTSPS.toLocaleString()} บ.<br>
+        🎁 <strong>GIVE (5%):</strong> ${jars.GIVE.toLocaleString()} บ.
+        ${advice}
+      `;
+
+      let histHtml = "";
+      const recent = myTransactions.slice(-5).reverse();
+      recent.forEach(t => {
+        histHtml += `<li>${t.item}: ${t.amount}บ. (${t.jar_type})</li>`;
+      });
+      document.getElementById('historyList').innerHTML = histHtml || "<li>ยังไม่มีรายการ</li>";
+    }
+
+    function clearData() {
+      if(confirm("คุณต้องการล้างข้อมูลรายรับรายจ่ายทั้งหมดออกจากเครื่องนี้ใช่หรือไม่?")) {
+        localStorage.removeItem('my_6jars_data');
+        myTransactions = new Array();
+        renderDashboard();
       }
     }
   </script>
