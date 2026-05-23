@@ -8,12 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Prompt', sans-serif; }
-   .glass-modal {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-700 flex justify-center min-h-screen">
@@ -51,10 +45,10 @@
 
           <div class="flex justify-between items-center mt-6 mb-3">
             <h3 class="text-sm font-semibold text-slate-600">📊 ตัวเลขวิเคราะห์แยกเดือน</h3>
-            <select id="monthFilter" class="bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" onchange="updateDashboard()"></select>
+            <select id="monthFilter" class="bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none animate-bounce" onchange="updateDashboard()"></select>
           </div>
 
-          <div class="bg-emerald-50 rounded-2xl p-5 text-center border border-emerald-100 mb-4">
+          <div class="bg-emerald-50 rounded-2xl p-5 text-center border border-emerald-100 mb-4 animate-pulse">
             <div class="text-xs text-emerald-800 font-semibold uppercase tracking-wider">โหลรายรับสะสม (INCOME)</div>
             <div class="text-3xl font-bold text-emerald-700 mt-1" id="valIncome">0 ฿</div>
           </div>
@@ -170,7 +164,7 @@
 
     let currentUser = "";
     let myData = new Array();
-    let pendingData = null; // เก็บข้อมูลชั่วคราวเพื่อรอการยืนยันซ้ำ
+    let pendingData = null; 
 
     function initMonths() {
       const select = document.getElementById('monthFilter');
@@ -199,6 +193,23 @@
       initMonths();
       const stored = localStorage.getItem('6jars_' + currentUser);
       myData = stored? JSON.parse(stored) : new Array();
+
+      // ✅ [ระบบแก้ไขด่วน]: สแกนข้อมูลเก่าและสุ่ม ID ประจำรายการอัตโนมัติ เพื่อให้กดแก้ไขและกดลบข้อมูลเก่าได้ 100%
+      let hasUpdates = false;
+      myData.forEach(function(t) {
+        if (!t.id) {
+          t.id = "tx_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+          hasUpdates = true;
+        }
+        if (!t.isoDate && t.date) {
+          t.isoDate = new Date().toISOString(); 
+          hasUpdates = true;
+        }
+      });
+      if (hasUpdates === true) {
+        localStorage.setItem('6jars_' + currentUser, JSON.stringify(myData));
+      }
+
       updateDashboard();
     }
 
@@ -241,10 +252,10 @@
         if (result.status === "success") {
           const aiItems = result.data;
           
-          // ตรวจสอบรายการซ้ำก่อนเซฟลงเครื่อง
+          // ระบบแจ้งเตือนบันทึกรายการซ้ำ
           const duplicateItem = checkDuplicate(aiItems);
           if (duplicateItem!== null) {
-            pendingData = aiItems; // พักข้อมูลรอเซฟ
+            pendingData = aiItems; 
             document.getElementById('duplicateDetails').innerText = `${duplicateItem.item}: ${duplicateItem.amount} บาท`;
             document.getElementById('duplicateModal').classList.remove('hidden');
             status.style.display = 'none';
@@ -269,7 +280,6 @@
       }
     }
 
-    // ตรวจสอบข้อมูลซ้ำในเครื่องในวันเดียวกัน
     function checkDuplicate(aiItems) {
       const todayStr = new Date().toDateString();
       for (let i = 0; i < aiItems.length; i++) {
@@ -311,7 +321,7 @@
     function saveTransactionsDirectly(aiItems) {
       aiItems.forEach(item => {
         myData.push({
-          id: "tx_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9), // สร้าง ID ประจำรายการ
+          id: "tx_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9), 
           isoDate: new Date().toISOString(), 
           date: new Date().toLocaleString('th-TH'), 
           item: item.item,
@@ -360,7 +370,7 @@
         warningEl.classList.add('hidden');
       }
 
-      // แสดงประวัติการเงินทั้งหมดในหน้าประวัติ พร้อมปุ่มแก้ไขและลบ
+      // เรนเดอร์หน้าประวัติการเงิน
       let histHtml = "";
       const recent = myData.slice().reverse();
       recent.forEach(t => {
@@ -376,11 +386,11 @@
           </div>
           <div class="flex items-center gap-3">
             <div class="${color} font-semibold text-sm">${sign}${t.amount.toLocaleString()} ฿</div>
-            <div class="flex gap-1">
-              <button onclick="openEditModal('${t.id}')" class="p-1.5 hover:bg-sky-50 text-sky-500 rounded-lg transition" title="แก้ไข">
+            <div class="flex gap-2">
+              <button onclick="openEditModal('${t.id}')" class="p-1 text-sky-500 hover:bg-sky-50 rounded transition" title="แก้ไข">
                 ✏️
               </button>
-              <button onclick="deleteTransaction('${t.id}')" class="p-1.5 hover:bg-rose-50 text-rose-500 rounded-lg transition" title="ลบ">
+              <button onclick="deleteTransaction('${t.id}')" class="p-1 text-rose-500 hover:bg-rose-50 rounded transition" title="ลบ">
                 🗑️
               </button>
             </div>
@@ -390,7 +400,6 @@
       document.getElementById('historyList').innerHTML = histHtml || "<li class='py-4 text-center text-slate-400 text-sm'>ยังไม่มีรายการ</li>";
     }
 
-    // ฟังก์ชันลบรายการรายจ่ายย้อนหลัง
     function deleteTransaction(id) {
       if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้อย่างถาวร?")) {
         myData = myData.filter(function(t) { return t.id!== id; });
@@ -399,7 +408,6 @@
       }
     }
 
-    // เปิดป๊อบอัพแก้ไข
     function openEditModal(id) {
       const tx = myData.find(function(t) { return t.id === id; });
       if (!tx) return;
@@ -414,7 +422,6 @@
       document.getElementById('editModal').classList.add('hidden');
     }
 
-    // บันทึกการแก้ไข
     function saveEdit() {
       const id = document.getElementById('editTxId').value;
       const item = document.getElementById('editItem').value.trim();
