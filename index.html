@@ -45,10 +45,10 @@
 
           <div class="flex justify-between items-center mt-6 mb-3">
             <h3 class="text-sm font-semibold text-slate-600">📊 ตัวเลขวิเคราะห์แยกเดือน</h3>
-            <select id="monthFilter" class="bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none animate-bounce" onchange="updateDashboard()"></select>
+            <select id="monthFilter" class="bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" onchange="updateDashboard()"></select>
           </div>
 
-          <div class="bg-emerald-50 rounded-2xl p-5 text-center border border-emerald-100 mb-4 animate-pulse">
+          <div class="bg-emerald-50 rounded-2xl p-5 text-center border border-emerald-100 mb-4">
             <div class="text-xs text-emerald-800 font-semibold uppercase tracking-wider">โหลรายรับสะสม (INCOME)</div>
             <div class="text-3xl font-bold text-emerald-700 mt-1" id="valIncome">0 ฿</div>
           </div>
@@ -105,13 +105,16 @@
         <button class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-history', this)">
           <span class="text-lg">📝</span> ประวัติการเงิน
         </button>
+        <button class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1 nav-item" onclick="getSummary()">
+          <span class="text-lg">🧠</span> สรุปวิเคราะห์ AI
+        </button>
       </div>
 
     </div>
 
   </div>
 
-  <div id="duplicateModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1] transition-opacity duration-300">
+  <div id="duplicateModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[3] transition-opacity duration-300">
     <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-slate-100">
       <div class="text-amber-500 text-5xl mb-3">⚠️</div>
       <h3 class="text-lg font-bold text-slate-800">ตรวจพบรายการซ้ำ!</h3>
@@ -125,7 +128,7 @@
     </div>
   </div>
 
-  <div id="editModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1] transition-opacity duration-300">
+  <div id="editModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[3] transition-opacity duration-300">
     <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
       <h3 class="text-lg font-bold text-slate-800 mb-4">✏️ แก้ไขข้อมูลการเงิน</h3>
       <input type="hidden" id="editTxId">
@@ -194,7 +197,7 @@
       const stored = localStorage.getItem('6jars_' + currentUser);
       myData = stored? JSON.parse(stored) : new Array();
 
-      // ✅ [ระบบแก้ไขด่วน]: สแกนข้อมูลเก่าและสุ่ม ID ประจำรายการอัตโนมัติ เพื่อให้กดแก้ไขและกดลบข้อมูลเก่าได้ 100%
+      // ✅ [ซ่อมแซมข้อมูลเก่าอัตโนมัติ]: เพื่อดึงรายการเก่าให้สามารถลบและแก้ไขได้ทันทีโดยสุ่ม ID ประจำตัวให้
       let hasUpdates = false;
       myData.forEach(function(t) {
         if (!t.id) {
@@ -370,7 +373,7 @@
         warningEl.classList.add('hidden');
       }
 
-      // เรนเดอร์หน้าประวัติการเงิน
+      // แสดงประวัติการเงินทั้งหมดในหน้าประวัติ พร้อมปุ่มแก้ไขและลบ
       let histHtml = "";
       const recent = myData.slice().reverse();
       recent.forEach(t => {
@@ -446,6 +449,73 @@
       localStorage.setItem('6jars_' + currentUser, JSON.stringify(myData));
       closeEditModal();
       updateDashboard();
+    }
+
+    // ✅ [ฟีเจอร์เด่น]: สรุปรายงานวิเคราะห์เชิงลึกด้วย AI (จำลองความฉลาดจาก NotebookLM)
+    async function getSummary() {
+      const status = document.getElementById('status');
+      const filterVal = document.getElementById('monthFilter').value;
+      const parts = filterVal.split("-");
+      const targetYear = parseInt(parts.at(0));
+      const targetMonth = parseInt(parts.at(1));
+      
+      const monthSelect = document.getElementById('monthFilter');
+      const selectedMonthName = monthSelect.options.text;
+
+      // กรองเฉพาะรายการของเดือนที่ถูกเลือกในหน้าแดชบอร์ดส่งไปให้ AI ประมวลผล
+      let filteredTx = new Array();
+      myData.forEach(function(t) {
+        const tDate = t.isoDate? new Date(t.isoDate) : new Date();
+        if (tDate.getMonth() === targetMonth && tDate.getFullYear() === targetYear) {
+          filteredTx.push(t);
+        }
+      });
+
+      if (filteredTx.length === 0) {
+        status.style.display = 'block';
+        status.style.color = '#b91c1c';
+        status.style.backgroundColor = '#fee2e2';
+        status.innerText = '❌ ไม่พบข้อมูลรายรับรายจ่ายในเดือนที่เลือกเพื่อส่งไปให้ AI วิเคราะห์ค่ะ';
+        return;
+      }
+
+      status.style.display = 'block';
+      status.style.color = '#0284c7';
+      status.style.backgroundColor = '#e0f2fe';
+      status.innerText = '⏳ AI กำลังสวมบทบาทนักวิเคราะห์การเงิน (สไตล์ NotebookLM) เพื่อจัดทำรายงานให้คุณ...';
+
+      // สลับไปหน้าหลักเพื่อแสดงผลลัพธ์การพิมพ์วิเคราะห์
+      switchTab('tab-home', document.querySelectorAll('.nav-item').at(0));
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            action: 'analyze', 
+            transactions: filteredTx, 
+            monthName: selectedMonthName 
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+          status.style.color = '#1e293b';
+          status.style.backgroundColor = '#f1f5f9';
+          status.style.textAlign = 'left';
+          status.innerText = result.analysis; // แสดงผลวิเคราะห์ที่ได้จาก DeepSeek ทันที!
+        } else {
+          status.style.color = '#b91c1c';
+          status.style.backgroundColor = '#fee2e2';
+          status.style.textAlign = 'center';
+          status.innerText = '❌ ' + result.message;
+        }
+      } catch (error) {
+        status.style.color = '#b91c1c';
+        status.style.backgroundColor = '#fee2e2';
+        status.style.textAlign = 'center';
+        status.innerText = '❌ เกิดข้อผิดพลาดในการดึงรายงานวิเคราะห์ AI โปรดตรวจสอบระบบเครือข่าย';
+      }
     }
 
     function exportData() {
