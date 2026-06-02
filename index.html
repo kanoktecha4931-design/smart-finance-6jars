@@ -48,9 +48,22 @@
             <select id="monthFilter" class="bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" onchange="updateDashboard()"></select>
           </div>
 
-          <div class="bg-emerald-50 rounded-2xl p-5 text-center border border-emerald-100 mb-4">
-            <div class="text-xs text-emerald-800 font-semibold uppercase tracking-wider">โหลรายรับสะสม (INCOME)</div>
-            <div class="text-3xl font-bold text-emerald-700 mt-1" id="valIncome">0 ฿</div>
+          <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 mb-4">
+            <div class="text-xs text-emerald-800 font-semibold uppercase tracking-wider text-center" id="monthTitle">สรุปสถิติโหลรายรับ</div>
+            <div class="grid grid-cols-3 gap-2 mt-4 text-slate-700">
+              <div class="text-center">
+                <div class="text-[10px] text-slate-400 font-medium">เงินยกมาสะสม</div>
+                <div class="text-sm font-bold text-slate-600 mt-1" id="valCarried">0 ฿</div>
+              </div>
+              <div class="text-center border-x border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">รายรับเดือนนี้</div>
+                <div class="text-sm font-bold text-slate-600 mt-1" id="valCurrentIncome">0 ฿</div>
+              </div>
+              <div class="text-center">
+                <div class="text-[10px] text-emerald-800 font-bold">รวมรายรับมีอยู่</div>
+                <div class="text-sm font-bold text-emerald-600 mt-1" id="valIncome">0 ฿</div>
+              </div>
+            </div>
           </div>
 
           <div id="warningBox" class="hidden bg-rose-50 text-rose-700 p-4 rounded-xl text-xs text-center mb-4 font-semibold border border-rose-100"></div>
@@ -114,7 +127,7 @@
 
   </div>
 
-  <div id="duplicateModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[3] transition-opacity duration-300">
+  <div id="duplicateModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[6] transition-opacity duration-300">
     <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-slate-100">
       <div class="text-amber-500 text-5xl mb-3">⚠️</div>
       <h3 class="text-lg font-bold text-slate-800">ตรวจพบรายการซ้ำ!</h3>
@@ -128,7 +141,7 @@
     </div>
   </div>
 
-  <div id="editModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[3] transition-opacity duration-300">
+  <div id="editModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[6] transition-opacity duration-300">
     <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
       <h3 class="text-lg font-bold text-slate-800 mb-4">✏️ แก้ไขข้อมูลการเงิน</h3>
       <input type="hidden" id="editTxId">
@@ -169,6 +182,13 @@
     let myData = new Array();
     let pendingData = null; 
 
+    // ตัวแปรเก็บสถิติเพื่อแชร์ไปใช้ตอน AI วิเคราะห์
+    let currentCarriedOver = 0;
+    let currentNewIncome = 0;
+    let currentTotalIncome = 0;
+    let currentJars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LTSPS: 0, GIVE: 0 };
+    let currentPercentages = { nec: "0.0", play: "0.0", ffa: "0.0", edu: "0.0", ltsps: "0.0", give: "0.0" };
+
     function initMonths() {
       const select = document.getElementById('monthFilter');
       select.innerHTML = "";
@@ -197,7 +217,7 @@
       const stored = localStorage.getItem('6jars_' + currentUser);
       myData = stored? JSON.parse(stored) : new Array();
 
-      // ✅ [ซ่อมแซมข้อมูลเก่าอัตโนมัติ]: เพื่อดึงรายการเก่าให้สามารถลบและแก้ไขได้ทันทีโดยสุ่ม ID ประจำตัวให้
+      // [ระบบซ่อมแซมข้อมูลเก่าอัตโนมัติ]: เพื่อดึงรายการเก่าให้สามารถลบและแก้ไขได้ทันทีโดยสุ่ม ID ประจำตัวให้
       let hasUpdates = false;
       myData.forEach(function(t) {
         if (!t.id) {
@@ -242,6 +262,7 @@
       status.style.display = 'block';
       status.style.color = '#0284c7';
       status.style.backgroundColor = '#e0f2fe';
+      status.style.textAlign = 'center';
       status.innerText = '⏳ AI กำลังจัดกลุ่มเงินของคุณ...';
 
       try {
@@ -342,38 +363,88 @@
       const targetYear = parseInt(parts.at(0));
       const targetMonth = parseInt(parts.at(1));
 
-      let income = 0;
+      let pastIncome = 0;
+      let pastExpense = 0;
+      let currentIncome = 0;
       let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LTSPS: 0, GIVE: 0 };
 
+      // ✅ [ระบบการคำนวณทบยอดเงินสะสม]: วนลูปคัดแยกรายการในอดีตเพื่อหายอดเงินยกมาจากเดือนก่อนๆ 
       myData.forEach(t => {
         const tDate = t.isoDate? new Date(t.isoDate) : new Date();
-        if (tDate.getMonth() === targetMonth && tDate.getFullYear() === targetYear) {
+        const tMonthTime = new Date(tDate.getFullYear(), tDate.getMonth(), 1).getTime();
+        const targetMonthTime = new Date(targetYear, targetMonth, 1).getTime();
+
+        if (tMonthTime < targetMonthTime) {
+          // รายการในอดีต (สะสมข้ามเดือนยกมา) 
           if (t.jar_type === 'INCOME' || t.type === 'Income') {
-            income += t.amount;
+            pastIncome += t.amount;
+          } else {
+            pastExpense += t.amount;
+          }
+        } else if (tMonthTime === targetMonthTime) {
+          // รายการในเดือนปัจจุบันที่เลือก [7]
+          if (t.jar_type === 'INCOME' || t.type === 'Income') {
+            currentIncome += t.amount;
           } else if (jars[t.jar_type]!== undefined) {
             jars[t.jar_type] += t.amount;
           }
         }
       });
 
-      document.getElementById('valIncome').innerText = income.toLocaleString() + ' ฿';
-      document.getElementById('valNEC').innerText = jars.NEC.toLocaleString() + ' ฿';
-      document.getElementById('valPLAY').innerText = jars.PLAY.toLocaleString() + ' ฿';
-      document.getElementById('valFFA').innerText = jars.FFA.toLocaleString() + ' ฿';
-      document.getElementById('valEDU').innerText = jars.EDU.toLocaleString() + ' ฿';
-      document.getElementById('valLTSPS').innerText = jars.LTSPS.toLocaleString() + ' ฿';
-      document.getElementById('valGIVE').innerText = jars.GIVE.toLocaleString() + ' ฿';
+      // ยอดเงินคงเหลือสะสมยกมา (ต้องไม่ติดลบ)
+      let carriedOver = pastIncome - pastExpense;
+      if (carriedOver < 0) carriedOver = 0;
 
-      const playLimit = income * 0.10;
+      // รายรับรวมสุทธิสะสม (รายรับเดือนนี้ + เงินคงเหลือยกยอดมา)
+      let totalIncome = currentIncome + carriedOver;
+
+      // บันทึกสถิติลงตัวแปรกลางเพื่อเตรียมแชร์ให้ AI
+      currentCarriedOver = carriedOver;
+      currentNewIncome = currentIncome;
+      currentTotalIncome = totalIncome;
+      currentJars = jars;
+
+      // คำนวณเปอร์เซ็นต์จริงของแต่ละโหลเทียบกับรายรับสะสมรวม [7]
+      let necPercent = totalIncome > 0? ((jars.NEC / totalIncome) * 100).toFixed(1) : "0.0";
+      let playPercent = totalIncome > 0? ((jars.PLAY / totalIncome) * 100).toFixed(1) : "0.0";
+      let ffaPercent = totalIncome > 0? ((jars.FFA / totalIncome) * 100).toFixed(1) : "0.0";
+      let eduPercent = totalIncome > 0? ((jars.EDU / totalIncome) * 100).toFixed(1) : "0.0";
+      let ltspsPercent = totalIncome > 0? ((jars.LTSPS / totalIncome) * 100).toFixed(1) : "0.0";
+      let givePercent = totalIncome > 0? ((jars.GIVE / totalIncome) * 100).toFixed(1) : "0.0";
+
+      // บันทึก % ลงตัวแปรกลาง
+      currentPercentages = {
+        nec: necPercent,
+        play: playPercent,
+        ffa: ffaPercent,
+        edu: eduPercent,
+        ltsps: ltspsPercent,
+        give: givePercent
+      };
+
+      // แสดงสถิติสัดส่วนรายรับในหน้าแดชบอร์ด
+      document.getElementById('valCarried').innerText = carriedOver.toLocaleString() + ' ฿';
+      document.getElementById('valCurrentIncome').innerText = currentIncome.toLocaleString() + ' ฿';
+      document.getElementById('valIncome').innerText = totalIncome.toLocaleString() + ' ฿';
+      
+      // แสดงเปอร์เซ็นต์ประกบกับตัวเลขเงินของโหลแต่ละใบอย่างแม่นยำ [7]
+      document.getElementById('valNEC').innerHTML = jars.NEC.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + necPercent + '%)</span>';
+      document.getElementById('valPLAY').innerHTML = jars.PLAY.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + playPercent + '%)</span>';
+      document.getElementById('valFFA').innerHTML = jars.FFA.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + ffaPercent + '%)</span>';
+      document.getElementById('valEDU').innerHTML = jars.EDU.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + eduPercent + '%)</span>';
+      document.getElementById('valLTSPS').innerHTML = jars.LTSPS.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + ltspsPercent + '%)</span>';
+      document.getElementById('valGIVE').innerHTML = jars.GIVE.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + givePercent + '%)</span>';
+
+      const playLimit = totalIncome * 0.10;
       const warningEl = document.getElementById('warningBox');
-      if(income > 0 && jars.PLAY > playLimit) {
+      if(totalIncome > 0 && jars.PLAY > playLimit) {
         warningEl.classList.remove('hidden');
-        warningEl.innerText = `⚠️ โหล PLAY เดือนนี้ใช้เกินเป้าหมายไป ${(jars.PLAY - playLimit).toLocaleString()} ฿ (คุมโหล PLAY ให้อยู่ในสัดส่วน 10% เพื่อเงินเก็บที่ยั่งยืนนะคะ)`;
+        warningEl.innerText = `⚠️ โหล PLAY เดือนนี้ใช้ไปแล้ว ${playPercent}% ซึ่งเกินสัดส่วนเป้าหมาย 10% ไปแล้วนะคะ (เกินงบสะสมไป ${(jars.PLAY - playLimit).toLocaleString()} ฿)`;
       } else {
         warningEl.classList.add('hidden');
       }
 
-      // แสดงประวัติการเงินทั้งหมดในหน้าประวัติ พร้อมปุ่มแก้ไขและลบ
+      // เรนเดอร์หน้าประวัติการเงิน
       let histHtml = "";
       const recent = myData.slice().reverse();
       recent.forEach(t => {
@@ -451,7 +522,7 @@
       updateDashboard();
     }
 
-    // ✅ [ฟีเจอร์เด่น]: สรุปรายงานวิเคราะห์เชิงลึกด้วย AI (จำลองความฉลาดจาก NotebookLM)
+    // ✅ [ฟีเจอร์เด่น]: สรุปรายงานวิเคราะห์เชิงลึกด้วย AI (ส่งข้อมูลยกยอดเงินคงเหลือสะสมข้ามเดือนและสถิติ % ครบถ้วน) [4]
     async function getSummary() {
       const status = document.getElementById('status');
       const filterVal = document.getElementById('monthFilter').value;
@@ -462,7 +533,7 @@
       const monthSelect = document.getElementById('monthFilter');
       const selectedMonthName = monthSelect.options.text;
 
-      // กรองเฉพาะรายการของเดือนที่ถูกเลือกในหน้าแดชบอร์ดส่งไปให้ AI ประมวลผล
+      // กรองเฉพาะรายการของเดือนที่ถูกเลือกในหน้าแดชบอร์ดส่งไปให้ AI ประมวลผล [7]
       let filteredTx = new Array();
       myData.forEach(function(t) {
         const tDate = t.isoDate? new Date(t.isoDate) : new Date();
@@ -475,6 +546,7 @@
         status.style.display = 'block';
         status.style.color = '#b91c1c';
         status.style.backgroundColor = '#fee2e2';
+        status.style.textAlign = 'center';
         status.innerText = '❌ ไม่พบข้อมูลรายรับรายจ่ายในเดือนที่เลือกเพื่อส่งไปให้ AI วิเคราะห์ค่ะ';
         return;
       }
@@ -482,10 +554,30 @@
       status.style.display = 'block';
       status.style.color = '#0284c7';
       status.style.backgroundColor = '#e0f2fe';
+      status.style.textAlign = 'center';
       status.innerText = '⏳ AI กำลังสวมบทบาทนักวิเคราะห์การเงิน (สไตล์ NotebookLM) เพื่อจัดทำรายงานให้คุณ...';
 
       // สลับไปหน้าหลักเพื่อแสดงผลลัพธ์การพิมพ์วิเคราะห์
       switchTab('tab-home', document.querySelectorAll('.nav-item').at(0));
+
+      // แพ็กข้อมูลตัวเลขจริงและสัดส่วน % ทั้งหมดส่งไปหา AI เพื่อให้วิเคราะห์ % ได้สมบูรณ์ [4]
+      let summaryData = {
+        carriedOver: currentCarriedOver,
+        currentIncome: currentNewIncome,
+        totalIncome: currentTotalIncome,
+        nec: currentJars.NEC,
+        nec_percent: currentPercentages.nec,
+        play: currentJars.PLAY,
+        play_percent: currentPercentages.play,
+        ffa: currentJars.FFA,
+        ffa_percent: currentPercentages.ffa,
+        edu: currentJars.EDU,
+        edu_percent: currentPercentages.edu,
+        ltsps: currentJars.LTSPS,
+        ltsps_percent: currentPercentages.ltsps,
+        give: currentJars.GIVE,
+        give_percent: currentPercentages.give
+      };
 
       try {
         const response = await fetch(SCRIPT_URL, {
@@ -493,6 +585,7 @@
           body: JSON.stringify({ 
             action: 'analyze', 
             transactions: filteredTx, 
+            summary: summaryData, // ส่งตัวเลขสถิติที่คิดคำนวณเรียบร้อยให้ AI [4]
             monthName: selectedMonthName 
           })
         });
@@ -503,7 +596,7 @@
           status.style.color = '#1e293b';
           status.style.backgroundColor = '#f1f5f9';
           status.style.textAlign = 'left';
-          status.innerText = result.analysis; // แสดงผลวิเคราะห์ที่ได้จาก DeepSeek ทันที!
+          status.innerText = result.analysis; // แสดงบทวิเคราะห์สรุปพร้อม % จริงย้อนหลังสะสมจาก AI สำเร็จ! [4]
         } else {
           status.style.color = '#b91c1c';
           status.style.backgroundColor = '#fee2e2';
