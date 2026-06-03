@@ -1,48 +1,78 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" translate="no">
 <head>
-    <meta charset="UTF-8">
-    <title>Financial Analysis</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>6 Jars Finance App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style> body { font-family: 'Prompt', sans-serif; } </style>
 </head>
-<body class="bg-slate-50 p-6">
-    <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4 text-amber-600">วิเคราะห์เดือน พฤษภาคม 2569</h2>
-        <button onclick="startAnalysis()" class="w-full bg-slate-800 text-white p-4 rounded-lg font-bold">✨ เริ่มการวิเคราะห์</button>
-        <div id="result-box" class="mt-6 text-sm leading-relaxed text-slate-700"></div>
+<body class="bg-slate-50 text-slate-700 flex justify-center min-h-screen">
+  <div class="w-full max-w-md bg-slate-50 min-h-screen flex flex-col relative pb-20 shadow-2xl">
+    
+    <div id="loginScreen" class="flex flex-col justify-center items-center h-screen px-6 bg-white text-center">
+      <div class="text-6xl mb-4">🏺</div>
+      <h2 class="text-2xl font-semibold text-slate-800">แอปบันทึกเงิน 6 Jars</h2>
+      <input type="text" id="loginInput" class="w-10/12 p-4 mt-6 border-2 border-slate-200 rounded-xl text-center text-lg focus:outline-sky-500" placeholder="กรอกชื่อเพื่อเข้าใช้งาน...">
+      <button class="w-10/12 mt-4 p-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-medium shadow-lg transition" onclick="login()">เข้าสู่ระบบ</button>
     </div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
+    <div id="mainApp" class="hidden flex-col flex-1">
+      <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white px-6 py-6 rounded-b-[25px] flex justify-between items-center shadow-md">
+        <div>
+          <span class="text-xs opacity-75">ผู้ใช้งานปัจจุบัน</span>
+          <h2 class="text-xl font-semibold">คุณ <span id="displayUser">User</span></h2>
+        </div>
+        <button class="bg-white/20 hover:bg-white/30 text-xs px-3 py-2 rounded-full transition" onclick="logout()">สลับโปรไฟล์</button>
+      </div>
 
-        async function startAnalysis() {
-            const activeUser = localStorage.getItem('current_active_user');
-            const myData = JSON.parse(localStorage.getItem('6jars_' + activeUser) || "[]");
-            
-            if (myData.length === 0) {
-                alert("ไม่พบข้อมูลการบันทึก กรุณาตรวจสอบว่าคุณเข้าสู่ระบบในหน้าหลักแล้ว");
-                return;
-            }
+      <div class="p-4 flex-1">
+        <div id="tab-home" class="tab-content">
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-600 mb-3">✍️ จดบันทึกรายการด้วย AI</h3>
+            <input type="text" id="userInput" class="w-full p-4 border border-slate-200 rounded-xl focus:outline-sky-500" placeholder="พิมพ์บอก AI...">
+            <button class="w-full p-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium shadow-md transition" onclick="submitData()">บันทึกข้อมูล</button>
+          </div>
+          </div>
 
-            // กรองเฉพาะเดือนพฤษภาคม 2569 (index 4)
-            let filteredTx = myData.filter(t => {
-                const d = new Date(t.isoDate);
-                return d.getMonth() === 4 && d.getFullYear() === 2026;
-            });
+        <div id="tab-history" class="tab-content hidden">
+            </div>
+      </div>
 
-            // คำนวณยอดเงินแต่ละโหล (LSS)
-            let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LSS: 0, GIVE: 0 };
-            filteredTx.forEach(t => { if(jars.hasOwnProperty(t.jar_type)) jars[t.jar_type] += t.amount; });
+      <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 flex justify-around py-3 z-50 shadow-lg">
+        <button class="flex flex-col items-center text-sky-500 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-home', this)">🏠 แดชบอร์ด</button>
+        <button class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-history', this)">📝 ประวัติการเงิน</button>
+        <button onclick="openAnalysis()" class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1">
+            🧠 สรุปวิเคราะห์ AI
+        </button>
+      </div>
+    </div>
+  </div>
 
-            const summary = { carriedOver: 0, currentIncome: 0, totalIncome: 0, nec: jars.NEC, play: jars.PLAY, ffa: jars.FFA, edu: jars.EDU, lss: jars.LSS, give: jars.GIVE, nec_percent: 0, play_percent: 0, ffa_percent: 0, edu_percent: 0, lss_percent: 0, give_percent: 0 };
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
+    let currentUser = "";
 
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'analyze', transactions: filteredTx, summary: summary, monthName: "พฤษภาคม 2569" })
-            });
-            const result = await res.json();
-            document.getElementById('result-box').innerHTML = result.analysis.replace(/\n/g, '<br>');
-        }
-    </script>
+    function login() {
+      currentUser = document.getElementById('loginInput').value.trim();
+      if(!currentUser) return;
+      // เก็บชื่อผู้ใช้ไว้เพื่อให้หน้าวิเคราะห์ดึงไปใช้
+      localStorage.setItem('current_active_user', currentUser); 
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'flex';
+      document.getElementById('displayUser').innerText = currentUser;
+      // ... (โค้ดโหลดข้อมูลเดิม)
+    }
+
+    // ฟังก์ชันเปิดแท็บใหม่
+    function openAnalysis() {
+        if(!currentUser) { alert("กรุณาเข้าสู่ระบบก่อน"); return; }
+        window.open('analysis.html', '_blank');
+    }
+    
+    function switchTab(tabId, el) { /* คงเดิม */ }
+    // ... (โค้ดอื่นๆ ของคุณ คงเดิม)
+  </script>
 </body>
 </html>
