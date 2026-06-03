@@ -58,7 +58,6 @@
         // ⚠️ ใส่ URL เว็บแอปของ Google Apps Script 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec";
 
-        // แสดงชื่อเดือนที่เลือกมาจากหน้าหลักทันทีที่โหลดเสร็จ
         window.onload = function() {
             const mText = localStorage.getItem('analyze_month_text');
             if (mText) document.getElementById('displayMonthName').innerText = mText;
@@ -79,8 +78,7 @@
                 return;
             }
 
-            // อ่านค่าเดือนจากที่ผู้ใช้เลือกในหน้าเว็บหลัก
-            const monthVal = localStorage.getItem('analyze_month_val'); // เช่น "2026-4"
+            const monthVal = localStorage.getItem('analyze_month_val');
             const monthText = localStorage.getItem('analyze_month_text') || "เดือนที่เลือก";
             
             let targetYear = new Date().getFullYear();
@@ -104,7 +102,7 @@
                 const selectedMonthTime = new Date(targetYear, targetMonth, 1).getTime();
 
                 let jType = t.jar_type;
-                if(jType === 'LTSPS') jType = 'LSS'; // รองรับชื่อโหลแบบเก่าให้วิเคราะห์ได้
+                if(jType === 'LTSPS') jType = 'LSS';
 
                 if (tMonthTime < selectedMonthTime) {
                     if (jType === 'INCOME' || t.type === 'Income') pastIncome += t.amount;
@@ -134,7 +132,7 @@
                 play: jars.PLAY, play_percent: playPercent,
                 ffa: jars.FFA, ffa_percent: ffaPercent,
                 edu: jars.EDU, edu_percent: eduPercent,
-                ltsps: jars.LSS, ltsps_percent: lssPercent, // ส่งค่าในตัวแปรเดิมให้ Apps Script ไปก่อนจะได้ไม่ต้องแก้เยอะ
+                ltsps: jars.LSS, ltsps_percent: lssPercent, 
                 give: jars.GIVE, give_percent: givePercent
             };
 
