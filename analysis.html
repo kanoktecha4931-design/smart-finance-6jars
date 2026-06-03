@@ -2,66 +2,204 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Financial Analysis</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Financial Analysis - 6 Jars</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #FAFAFA; color: #333333; margin: 0; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; }
+        .btn-close-tab { align-self: flex-start; background-color: transparent; color: #C0392B; border: 1px solid #C0392B; padding: 8px 16px; font-size: 14px; font-family: 'Prompt', sans-serif; border-radius: 6px; cursor: pointer; margin-bottom: 20px; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .btn-close-tab:hover { background-color: #C0392B; color: #FFFFFF; }
+        .header-title { color: #D4AF37; font-weight: 600; letter-spacing: 1px; margin-bottom: 20px; text-align: center; }
+        .card { background-color: #FFFFFF; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 40px; width: 100%; max-width: 600px; text-align: center; position: relative; overflow: hidden; }
+        .btn-analyze { background-color: #5A4A42; color: #FFFFFF; border: none; padding: 15px 30px; font-size: 16px; font-family: 'Prompt', sans-serif; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; box-shadow: 0 4px 15px rgba(90, 74, 66, 0.2); width: 100%; max-width: 300px; }
+        .btn-analyze:hover { background-color: #D4AF37; }
+        .result-area { margin-top: 30px; text-align: left; line-height: 1.8; display: none; padding: 20px; background-color: #FDFBF7; border-left: 4px solid #D4AF37; border-radius: 4px; }
+        #premium-loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.98); z-index: 10; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .cartoon-character { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3); animation: float 3s ease-in-out infinite; }
+        .text-container { height: 40px; margin-top: 10px; }
+        #fading-text { font-size: 16px; color: #5A4A42; transition: opacity 1s ease-in-out; margin: 0; }
+        .fade-in { opacity: 1; } .fade-out { opacity: 0; }
+        .premium-spinner { margin-top: 20px; width: 35px; height: 35px; border: 2px solid rgba(212, 175, 55, 0.2); border-top: 2px solid #D4AF37; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body class="bg-slate-50 p-6">
-    <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4 text-amber-600">วิเคราะห์ข้อมูลการเงิน</h2>
-        <button onclick="startAnalysis()" id="btn-run" class="w-full bg-slate-800 text-white p-4 rounded-lg font-bold">✨ เริ่มการวิเคราะห์</button>
-        <div id="result-box" class="mt-6 text-sm leading-relaxed text-slate-700"></div>
+<body>
+
+    <button class="btn-close-tab" onclick="window.close()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        ปิดหน้าต่างนี้ (กลับสู่หน้าบันทึกหลัก)
+    </button>
+
+    <h2 class="header-title">ระบบวิเคราะห์การเงินอัจฉริยะ</h2>
+
+    <div class="card">
+        <h3>สรุปผล <span id="displayMonthName" style="color:#D4AF37;">เดือนที่เลือก</span></h3>
+        <p style="color: #888; font-size: 14px; margin-bottom: 30px;">
+            AI จะดึงยอดสะสม 6 Jars และประวัติการบันทึกเงินของคุณ มาวิเคราะห์เพื่อหาจุดรั่วไหลและเสนอแผนสร้างความมั่งคั่ง
+        </p>
+        
+        <button class="btn-analyze" id="btn-start" onclick="startAnalysis()">✨ เริ่มการวิเคราะห์ AI</button>
+
+        <div class="result-area" id="result-box">
+            <div id="ai-response"></div>
+        </div>
+
+        <div id="premium-loading-screen">
+            <img src="https://cdn-icons-png.flaticon.com/512/10398/10398012.png" alt="AI Character" class="cartoon-character">
+            <div class="text-container">
+                <p id="fading-text" class="fade-in">กำลังรวมข้อมูล 6 Jars ของคุณ...</p>
+            </div>
+            <div class="premium-spinner"></div>
+        </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
+        // ⚠️ ใส่ URL เว็บแอปของ Google Apps Script 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec";
 
-        async function startAnalysis() {
-            const btn = document.getElementById('btn-run');
-            const resBox = document.getElementById('result-box');
+        // แสดงชื่อเดือนที่เลือกมาจากหน้าหลักทันทีที่โหลดเสร็จ
+        window.onload = function() {
+            const mText = localStorage.getItem('analyze_month_text');
+            if (mText) document.getElementById('displayMonthName').innerText = mText;
+        };
+
+        function startAnalysis() {
+            const activeUser = localStorage.getItem('current_active_user');
+            if (!activeUser) {
+                alert("ไม่พบข้อมูลผู้ใช้งาน กรุณากลับไปเข้าสู่ระบบที่หน้าหลักค่ะ");
+                return;
+            }
+
+            const rawData = localStorage.getItem('6jars_' + activeUser);
+            const myData = rawData ? JSON.parse(rawData) : [];
+
+            if (myData.length === 0) {
+                alert("คุณยังไม่มีประวัติการบันทึกข้อมูลให้วิเคราะห์ค่ะ");
+                return;
+            }
+
+            // อ่านค่าเดือนจากที่ผู้ใช้เลือกในหน้าเว็บหลัก
+            const monthVal = localStorage.getItem('analyze_month_val'); // เช่น "2026-4"
+            const monthText = localStorage.getItem('analyze_month_text') || "เดือนที่เลือก";
             
-            // ใช้ window.opener เพื่อดึงข้อมูลจากหน้าหลัก (index.html) โดยตรง
-            if (!window.opener || !window.opener.myData) {
-                resBox.innerHTML = "<p class='text-red-500'>ไม่พบข้อมูล! ตรวจสอบว่าหน้าหลักเปิดอยู่ในเบราว์เซอร์เดียวกัน และคุณได้ล็อกอินแล้ว</p>";
-                return;
+            let targetYear = new Date().getFullYear();
+            let targetMonth = new Date().getMonth();
+            
+            if (monthVal) {
+                const parts = monthVal.split("-");
+                targetYear = parseInt(parts[0]);
+                targetMonth = parseInt(parts[1]);
             }
 
-            const myData = window.opener.myData;
-            btn.innerText = "กำลังวิเคราะห์...";
-
-            // กรองเดือนพฤษภาคม 2569 (index 4)
-            let filteredTx = myData.filter(t => {
-                const d = new Date(t.isoDate);
-                return d.getMonth() === 4 && d.getFullYear() === 2026;
-            });
-
-            if (filteredTx.length === 0) {
-                resBox.innerHTML = "<p class='text-red-500'>ไม่พบข้อมูลรายการในเดือนพฤษภาคม 2569</p>";
-                return;
-            }
-
-            // คำนวณยอดโหล (ใช้ LSS แทน LTSPS)
+            let pastIncome = 0;
+            let pastExpense = 0;
+            let currentIncome = 0;
             let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LSS: 0, GIVE: 0 };
-            filteredTx.forEach(t => { 
-                let jar = t.jar_type === 'LTSPS' ? 'LSS' : t.jar_type;
-                if(jars.hasOwnProperty(jar)) jars[jar] += t.amount; 
+            let filteredTx = [];
+
+            myData.forEach(t => {
+                const tDate = t.isoDate ? new Date(t.isoDate) : new Date();
+                const tMonthTime = new Date(tDate.getFullYear(), tDate.getMonth(), 1).getTime();
+                const selectedMonthTime = new Date(targetYear, targetMonth, 1).getTime();
+
+                let jType = t.jar_type;
+                if(jType === 'LTSPS') jType = 'LSS'; // รองรับชื่อโหลแบบเก่าให้วิเคราะห์ได้
+
+                if (tMonthTime < selectedMonthTime) {
+                    if (jType === 'INCOME' || t.type === 'Income') pastIncome += t.amount;
+                    else pastExpense += t.amount;
+                } else if (tMonthTime === selectedMonthTime) {
+                    filteredTx.push(t); 
+                    if (jType === 'INCOME' || t.type === 'Income') currentIncome += t.amount;
+                    else if (jars[jType] !== undefined) jars[jType] += t.amount;
+                }
             });
 
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        action: 'analyze', 
-                        transactions: filteredTx, 
-                        summary: jars, 
-                        monthName: "พฤษภาคม 2569" 
-                    })
-                });
-                const result = await res.json();
-                resBox.innerHTML = result.analysis.replace(/\n/g, '<br>');
-                btn.innerText = "วิเคราะห์เสร็จสิ้น";
-            } catch (e) {
-                resBox.innerHTML = "Error: ไม่สามารถเชื่อมต่อระบบวิเคราะห์ได้";
-            }
+            let carriedOver = Math.max(0, pastIncome - pastExpense);
+            let totalIncome = currentIncome + carriedOver;
+
+            let necPercent = totalIncome > 0 ? ((jars.NEC / totalIncome) * 100).toFixed(1) : "0.0";
+            let playPercent = totalIncome > 0 ? ((jars.PLAY / totalIncome) * 100).toFixed(1) : "0.0";
+            let ffaPercent = totalIncome > 0 ? ((jars.FFA / totalIncome) * 100).toFixed(1) : "0.0";
+            let eduPercent = totalIncome > 0 ? ((jars.EDU / totalIncome) * 100).toFixed(1) : "0.0";
+            let lssPercent = totalIncome > 0 ? ((jars.LSS / totalIncome) * 100).toFixed(1) : "0.0";
+            let givePercent = totalIncome > 0 ? ((jars.GIVE / totalIncome) * 100).toFixed(1) : "0.0";
+
+            let summaryData = {
+                carriedOver: carriedOver,
+                currentIncome: currentIncome,
+                totalIncome: totalIncome,
+                nec: jars.NEC, nec_percent: necPercent,
+                play: jars.PLAY, play_percent: playPercent,
+                ffa: jars.FFA, ffa_percent: ffaPercent,
+                edu: jars.EDU, edu_percent: eduPercent,
+                ltsps: jars.LSS, ltsps_percent: lssPercent, // ส่งค่าในตัวแปรเดิมให้ Apps Script ไปก่อนจะได้ไม่ต้องแก้เยอะ
+                give: jars.GIVE, give_percent: givePercent
+            };
+
+            const loadingScreen = document.getElementById('premium-loading-screen');
+            const textElement = document.getElementById('fading-text');
+            const resultBox = document.getElementById('result-box');
+            const aiResponseDiv = document.getElementById('ai-response');
+            const btnStart = document.getElementById('btn-start');
+
+            const loadingTexts = [
+                "กำลังคำนวณเงินสะสมของ " + monthText + "...",
+                "วิเคราะห์สัดส่วนรายรับและรายจ่าย...",
+                "ประมวลผลเชิงลึกด้วย AI...",
+                "จัดทำรายงานวิเคราะห์สไตล์ NotebookLM..."
+            ];
+            
+            let currentIndex = 0;
+            resultBox.style.display = 'none';
+            btnStart.style.display = 'none';
+            loadingScreen.style.display = 'flex';
+            
+            const textInterval = setInterval(() => {
+                textElement.classList.remove('fade-in');
+                textElement.classList.add('fade-out');
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % loadingTexts.length;
+                    textElement.innerText = loadingTexts[currentIndex];
+                    textElement.classList.remove('fade-out');
+                    textElement.classList.add('fade-in');
+                }, 1000); 
+            }, 3500);
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    action: 'analyze', 
+                    transactions: filteredTx, 
+                    summary: summaryData, 
+                    monthName: monthText 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(textInterval);
+                loadingScreen.style.display = 'none';
+                btnStart.style.display = 'inline-block';
+                btnStart.innerText = '🔄 วิเคราะห์ใหม่อีกครั้ง';
+                
+                if(data.status === "success" || data.analysis) {
+                    const analysisText = data.analysis || data.data || "วิเคราะห์สำเร็จ";
+                    const formattedText = analysisText.replace(/\n/g, '<br>');
+                    aiResponseDiv.innerHTML = `<strong>ผลการวิเคราะห์:</strong><br><br>${formattedText}`;
+                } else {
+                    aiResponseDiv.innerHTML = `<span style="color: red;">เกิดข้อผิดพลาด: ${data.message}</span>`;
+                }
+                resultBox.style.display = 'block';
+            })
+            .catch(error => {
+                clearInterval(textInterval);
+                loadingScreen.style.display = 'none';
+                btnStart.style.display = 'inline-block';
+                
+                aiResponseDiv.innerHTML = `<span style="color: red;">ไม่สามารถเชื่อมต่อระบบได้: ${error}</span>`;
+                resultBox.style.display = 'block';
+            });
         }
     </script>
 </body>
