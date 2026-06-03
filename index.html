@@ -1,25 +1,48 @@
 <!DOCTYPE html>
-<html lang="th" translate="no">
+<html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>6 Jars Finance App</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>Financial Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <!-- [โค้ดส่วนหน้า UI บันทึกข้อมูลเดิมของคุณ ให้คงไว้ตามเดิม] -->
-  <!-- ตรวจสอบให้แน่ใจว่าฟังก์ชัน login() มีบรรทัดนี้อยู่ด้านใน -->
-  <script>
-    function login() {
-      const name = document.getElementById('loginInput').value.trim();
-      if(!name) return;
-      currentUser = name;
-      localStorage.setItem('current_active_user', currentUser); // *** บรรทัดสำคัญ เพื่อให้หน้าวิเคราะห์รู้จักคุณ
-      // ... (โค้ดที่เหลือเดิม) ...
-    }
-    
-    // ตรงแถบเมนูด้านล่าง ปุ่มวิเคราะห์ให้ใช้ลิงก์นี้:
-    // <a href="analysis.html" target="_blank">🧠 สรุปวิเคราะห์ AI</a>
-  </script>
+<body class="bg-slate-50 p-6">
+    <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold mb-4 text-amber-600">วิเคราะห์เดือน พฤษภาคม 2569</h2>
+        <button onclick="startAnalysis()" class="w-full bg-slate-800 text-white p-4 rounded-lg font-bold">✨ เริ่มการวิเคราะห์</button>
+        <div id="result-box" class="mt-6 text-sm leading-relaxed text-slate-700"></div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
+
+        async function startAnalysis() {
+            const activeUser = localStorage.getItem('current_active_user');
+            const myData = JSON.parse(localStorage.getItem('6jars_' + activeUser) || "[]");
+            
+            if (myData.length === 0) {
+                alert("ไม่พบข้อมูลการบันทึก กรุณาตรวจสอบว่าคุณเข้าสู่ระบบในหน้าหลักแล้ว");
+                return;
+            }
+
+            // กรองเฉพาะเดือนพฤษภาคม 2569 (index 4)
+            let filteredTx = myData.filter(t => {
+                const d = new Date(t.isoDate);
+                return d.getMonth() === 4 && d.getFullYear() === 2026;
+            });
+
+            // คำนวณยอดเงินแต่ละโหล (LSS)
+            let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LSS: 0, GIVE: 0 };
+            filteredTx.forEach(t => { if(jars.hasOwnProperty(t.jar_type)) jars[t.jar_type] += t.amount; });
+
+            const summary = { carriedOver: 0, currentIncome: 0, totalIncome: 0, nec: jars.NEC, play: jars.PLAY, ffa: jars.FFA, edu: jars.EDU, lss: jars.LSS, give: jars.GIVE, nec_percent: 0, play_percent: 0, ffa_percent: 0, edu_percent: 0, lss_percent: 0, give_percent: 0 };
+
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'analyze', transactions: filteredTx, summary: summary, monthName: "พฤษภาคม 2569" })
+            });
+            const result = await res.json();
+            document.getElementById('result-box').innerHTML = result.analysis.replace(/\n/g, '<br>');
+        }
+    </script>
 </body>
 </html>
