@@ -6,40 +6,61 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 p-6">
-    <button onclick="window.close()" class="mb-4 text-red-600 border border-red-600 px-4 py-2 rounded">❌ ปิดหน้าต่างนี้</button>
     <div class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4 text-amber-600">วิเคราะห์เดือน พฤษภาคม 2569</h2>
-        <button onclick="startAnalysis()" class="w-full bg-slate-800 text-white p-4 rounded-lg">✨ เริ่มการวิเคราะห์</button>
-        <div id="result-box" class="mt-6 text-sm leading-relaxed hidden"></div>
+        <h2 class="text-xl font-bold mb-4 text-amber-600">วิเคราะห์ข้อมูลการเงิน</h2>
+        <button onclick="startAnalysis()" id="btn-run" class="w-full bg-slate-800 text-white p-4 rounded-lg font-bold">✨ เริ่มการวิเคราะห์</button>
+        <div id="result-box" class="mt-6 text-sm leading-relaxed text-slate-700"></div>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
 
         async function startAnalysis() {
-            const activeUser = localStorage.getItem('current_active_user');
+            const btn = document.getElementById('btn-run');
+            const resBox = document.getElementById('result-box');
+            btn.innerText = "กำลังดึงข้อมูลและวิเคราะห์...";
+            
+            // ค้นหาคีย์ทั้งหมดใน LocalStorage ที่ขึ้นต้นด้วย '6jars_'
+            let activeUser = "";
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key.startsWith('6jars_')) { activeUser = key.replace('6jars_', ''); break; }
+            }
+
             const myData = JSON.parse(localStorage.getItem('6jars_' + activeUser) || "[]");
             
-            // กรองเดือนพฤษภาคม 2569 (เดือน 4)
+            if (myData.length === 0) {
+                resBox.innerHTML = "<p class='text-red-500'>ไม่พบข้อมูลในเครื่อง กรุณาบันทึกข้อมูลในหน้าหลักก่อนค่ะ</p>";
+                btn.innerText = "เริ่มการวิเคราะห์";
+                return;
+            }
+
+            // กรองเดือนพฤษภาคม 2569
             let filteredTx = myData.filter(t => {
                 const d = new Date(t.isoDate);
                 return d.getMonth() === 4 && d.getFullYear() === 2026;
             });
 
-            // คำนวณยอดโหล (ใช้ LSS)
+            // คำนวณใหม่ให้แม่นยำ
             let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LSS: 0, GIVE: 0 };
-            filteredTx.forEach(t => { if(jars[t.jar_type] !== undefined) jars[t.jar_type] += t.amount; });
+            filteredTx.forEach(t => { if(jars.hasOwnProperty(t.jar_type)) jars[t.jar_type] += t.amount; });
 
-            let summaryData = { lss: jars.LSS, lss_percent: ((jars.LSS/10000)*100).toFixed(1) /*ปรับสูตรตามจริง*/ };
-
-            // ส่งข้อมูลไป Apps Script
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'analyze', transactions: filteredTx, summary: summaryData, monthName: "พฤษภาคม 2569" })
-            });
-            const result = await res.json();
-            document.getElementById('result-box').innerHTML = result.analysis.replace(/\n/g, '<br>');
-            document.getElementById('result-box').classList.remove('hidden');
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'analyze', 
+                        transactions: filteredTx, 
+                        summary: jars, 
+                        monthName: "พฤษภาคม 2569" 
+                    })
+                });
+                const result = await res.json();
+                resBox.innerHTML = result.analysis.replace(/\n/g, '<br>');
+                btn.innerText = "วิเคราะห์เสร็จสิ้น";
+            } catch (e) {
+                resBox.innerHTML = "Error: ไม่สามารถเชื่อมต่อระบบวิเคราะห์ได้";
+            }
         }
     </script>
 </body>
