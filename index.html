@@ -6,19 +6,24 @@
   <title>6 Jars Finance App</title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <style> body { font-family: 'Prompt', sans-serif; } </style>
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-700 flex justify-center min-h-screen">
+  
   <div class="w-full max-w-md bg-slate-50 min-h-screen flex flex-col relative pb-20 shadow-2xl">
     
     <div id="loginScreen" class="flex flex-col justify-center items-center h-screen px-6 bg-white text-center">
       <div class="text-6xl mb-4">🏺</div>
       <h2 class="text-2xl font-semibold text-slate-800">แอปบันทึกเงิน 6 Jars</h2>
+      <p class="text-sm text-slate-500 mt-2">ข้อมูลบันทึกในเครื่องส่วนตัว ปลอดภัยระดับสูงสุด (100% Private)</p>
       <input type="text" id="loginInput" class="w-10/12 p-4 mt-6 border-2 border-slate-200 rounded-xl text-center text-lg focus:outline-sky-500" placeholder="กรอกชื่อเพื่อเข้าใช้งาน...">
       <button class="w-10/12 mt-4 p-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-medium shadow-lg transition" onclick="login()">เข้าสู่ระบบ</button>
     </div>
 
     <div id="mainApp" class="hidden flex-col flex-1">
+      
       <div class="bg-gradient-to-r from-sky-500 to-blue-600 text-white px-6 py-6 rounded-b-[25px] flex justify-between items-center shadow-md">
         <div>
           <span class="text-xs opacity-75">ผู้ใช้งานปัจจุบัน</span>
@@ -28,51 +33,374 @@
       </div>
 
       <div class="p-4 flex-1">
+
         <div id="tab-home" class="tab-content">
+          
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
             <h3 class="text-sm font-semibold text-slate-600 mb-3">✍️ จดบันทึกรายการด้วย AI</h3>
-            <input type="text" id="userInput" class="w-full p-4 border border-slate-200 rounded-xl focus:outline-sky-500" placeholder="พิมพ์บอก AI...">
+            <input type="text" id="userInput" class="w-full p-4 border border-slate-200 rounded-xl focus:outline-sky-500" placeholder="พิมพ์บอก AI เช่น ทำบุญบริจาค 500 บาท..." onkeypress="if(event.key === 'Enter') submitData()">
             <button class="w-full p-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium shadow-md transition" onclick="submitData()">บันทึกข้อมูล</button>
-          </div>
+            <div id="status" class="mt-3 p-3 rounded-lg text-sm text-center hidden"></div>
           </div>
 
-        <div id="tab-history" class="tab-content hidden">
+          <div class="flex justify-between items-center mt-6 mb-3">
+            <h3 class="text-sm font-semibold text-slate-600">📊 ตัวเลขวิเคราะห์แยกเดือน</h3>
+            <select id="monthFilter" class="bg-white border border-slate-200 rounded-lg p-2 text-sm focus:outline-none" onchange="updateDashboard()"></select>
+          </div>
+
+          <div class="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 mb-4">
+            <div class="text-xs text-emerald-800 font-semibold uppercase tracking-wider text-center" id="monthTitle">สรุปสถิติโหลรายรับ</div>
+            <div class="grid grid-cols-3 gap-2 mt-4 text-slate-700">
+              <div class="text-center">
+                <div class="text-[10px] text-slate-400 font-medium">เงินยกมาสะสม</div>
+                <div class="text-sm font-bold text-slate-600 mt-1" id="valCarried">0 ฿</div>
+              </div>
+              <div class="text-center border-x border-slate-200">
+                <div class="text-[10px] text-slate-400 font-medium">รายรับเดือนนี้</div>
+                <div class="text-sm font-bold text-slate-600 mt-1" id="valCurrentIncome">0 ฿</div>
+              </div>
+              <div class="text-center">
+                <div class="text-[10px] text-emerald-800 font-bold">รวมรายรับมีอยู่</div>
+                <div class="text-sm font-bold text-emerald-600 mt-1" id="valIncome">0 ฿</div>
+              </div>
             </div>
+          </div>
+
+          <div id="warningBox" class="hidden bg-rose-50 text-rose-700 p-4 rounded-xl text-xs text-center mb-4 font-semibold border border-rose-100"></div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <div class="text-xs text-slate-400 font-medium">🏠 จำเป็น (NEC 55%)</div>
+              <div class="text-lg font-bold text-slate-700 mt-1" id="valNEC">0 ฿</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <div class="text-xs text-slate-400 font-medium">🎮 ให้รางวัล (PLAY 10%)</div>
+              <div class="text-lg font-bold text-slate-700 mt-1" id="valPLAY">0 ฿</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <div class="text-xs text-slate-400 font-medium">📈 ลงทุน (FFA 10%)</div>
+              <div class="text-lg font-bold text-slate-700 mt-1" id="valFFA">0 ฿</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <div class="text-xs text-slate-400 font-medium">📚 พัฒนาตน (EDU 10%)</div>
+              <div class="text-lg font-bold text-slate-700 mt-1" id="valEDU">0 ฿</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <!-- เปลี่ยนชื่อเป็น LSS -->
+              <div class="text-xs text-slate-400 font-medium">🏦 ออมยาว (LSS 10%)</div>
+              <div class="text-lg font-bold text-slate-700 mt-1" id="valLSS">0 ฿</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <div class="text-xs text-slate-400 font-medium">🎁 ทำบุญ/บริจาค (GIVE 5%)</div>
+              <div class="text-lg font-bold text-slate-700 mt-1" id="valGIVE">0 ฿</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="tab-history" class="tab-content hidden">
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <h3 class="text-base font-semibold text-slate-800 mb-4">📝 ประวัติการบันทึกเงิน</h3>
+            <ul class="divide-y divide-slate-100 max-h-[400px] overflow-y-auto" id="historyList"></ul>
+            
+            <div class="flex gap-2 mt-6">
+              <button class="flex-1 p-3 bg-cyan-500 hover:bg-cyan-600 text-white text-xs rounded-xl font-medium transition" onclick="exportData()">💾 สำรองข้อมูล (JSON)</button>
+              <button class="flex-1 p-3 bg-rose-500 hover:bg-rose-600 text-white text-xs rounded-xl font-medium transition" onclick="clearData()">❌ ล้างประวัติทั้งหมด</button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 flex justify-around py-3 z-50 shadow-lg">
-        <button class="flex flex-col items-center text-sky-500 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-home', this)">🏠 แดชบอร์ด</button>
-        <button class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-history', this)">📝 ประวัติการเงิน</button>
-        <button onclick="openAnalysis()" class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1">
-            🧠 สรุปวิเคราะห์ AI
+        <button class="flex flex-col items-center text-sky-500 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-home', this)">
+          <span class="text-lg">🏠</span> แดชบอร์ด
         </button>
+        <button class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1 nav-item" onclick="switchTab('tab-history', this)">
+          <span class="text-lg">📝</span> ประวัติการเงิน
+        </button>
+        <!-- ปุ่มวิเคราะห์ ส่งข้อมูลเข้า LocalStorage ก่อนเปิดแท็บใหม่ -->
+        <a href="analysis.html" target="_blank" onclick="prepareAnalysisData()" class="flex flex-col items-center text-slate-400 font-medium text-xs gap-1 nav-item" style="text-decoration: none;">
+          <span class="text-lg">🧠</span> สรุปวิเคราะห์ AI
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="editModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[6] transition-opacity duration-300">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100">
+      <h3 class="text-lg font-bold text-slate-800 mb-4">✏️ แก้ไขข้อมูลการเงิน</h3>
+      <input type="hidden" id="editTxId">
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs font-semibold text-slate-400">ชื่อรายการ</label>
+          <input type="text" id="editItem" class="w-full p-3 border border-slate-200 rounded-xl mt-1 focus:outline-sky-500 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-400">จำนวนเงิน (บาท)</label>
+          <input type="number" id="editAmount" class="w-full p-3 border border-slate-200 rounded-xl mt-1 focus:outline-sky-500 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-400">กลุ่มเงินโหล (6 Jars)</label>
+          <select id="editJarType" class="w-full p-3 border border-slate-200 rounded-xl mt-1 focus:outline-none text-sm bg-slate-50">
+            <option value="NEC">NEC (จำเป็น 55%)</option>
+            <option value="PLAY">PLAY (ให้รางวัล 10%)</option>
+            <option value="FFA">FFA (ลงทุน 10%)</option>
+            <option value="EDU">EDU (พัฒนาตน 10%)</option>
+            <option value="LSS">LSS (ออมยาว 10%)</option> <!-- เปลี่ยนเป็น LSS -->
+            <option value="GIVE">GIVE (ทำบุญ/บริจาค 5%)</option>
+            <option value="INCOME">INCOME (รายรับ)</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-6">
+        <button onclick="saveEdit()" class="flex-1 p-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-sm font-semibold transition shadow-md">บันทึก</button>
+        <button onclick="closeEditModal()" class="flex-1 p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold transition">ยกเลิก</button>
       </div>
     </div>
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec"; 
+    // ⚠️ อย่าลืมนำ URL เว็บแอปจาก Google Apps Script มาใส่ที่นี่นะคะ
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec";
+
     let currentUser = "";
+    let myData = new Array();
+
+    function initMonths() {
+      const select = document.getElementById('monthFilter');
+      select.innerHTML = "";
+      const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+      
+      const now = new Date();
+      for (let i = -5; i <= 1; i++) {
+        let tempDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+        let opt = document.createElement('option');
+        opt.value = tempDate.getFullYear() + "-" + tempDate.getMonth();
+        opt.innerText = monthNames.at(tempDate.getMonth()) + " " + (tempDate.getFullYear() + 543);
+        if (i === 0) opt.selected = true;
+        select.appendChild(opt);
+      }
+    }
 
     function login() {
-      currentUser = document.getElementById('loginInput').value.trim();
-      if(!currentUser) return;
-      // เก็บชื่อผู้ใช้ไว้เพื่อให้หน้าวิเคราะห์ดึงไปใช้
-      localStorage.setItem('current_active_user', currentUser); 
+      const name = document.getElementById('loginInput').value.trim();
+      if(!name) return;
+      currentUser = name;
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainApp').style.display = 'flex';
-      document.getElementById('displayUser').innerText = currentUser;
-      // ... (โค้ดโหลดข้อมูลเดิม)
+      document.getElementById('displayUser').innerText = name;
+      
+      // บันทึกชื่อผู้ใช้ปัจจุบันไว้ให้หน้าแท็บ AI ดึงไปใช้งาน
+      localStorage.setItem('current_active_user', currentUser);
+      
+      initMonths();
+      const stored = localStorage.getItem('6jars_' + currentUser);
+      myData = stored ? JSON.parse(stored) : new Array();
+      updateDashboard();
     }
 
-    // ฟังก์ชันเปิดแท็บใหม่
-    function openAnalysis() {
-        if(!currentUser) { alert("กรุณาเข้าสู่ระบบก่อน"); return; }
-        window.open('analysis.html', '_blank');
+    function logout() {
+      currentUser = "";
+      localStorage.removeItem('current_active_user'); // ล้างข้อมูลออกเมื่อออกระบบ
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('loginInput').value = "";
     }
-    
-    function switchTab(tabId, el) { /* คงเดิม */ }
-    // ... (โค้ดอื่นๆ ของคุณ คงเดิม)
+
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(e => {
+        e.classList.remove('text-sky-500');
+        e.classList.add('text-slate-400');
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      el.classList.remove('text-slate-400');
+      el.classList.add('text-sky-500');
+    }
+
+    // ฟังก์ชันเตรียมข้อมูลก่อนเปิดแท็บ AI
+    function prepareAnalysisData() {
+        const monthFilter = document.getElementById('monthFilter');
+        localStorage.setItem('current_active_user', currentUser);
+        localStorage.setItem('analyze_month_val', monthFilter.value); // ส่งค่าเดือนที่เลือกไป
+        localStorage.setItem('analyze_month_text', monthFilter.options[monthFilter.selectedIndex].text);
+    }
+
+    async function submitData() {
+      const input = document.getElementById('userInput');
+      const status = document.getElementById('status');
+      if(!input.value) return;
+
+      status.style.display = 'block';
+      status.style.color = '#0284c7';
+      status.style.backgroundColor = '#e0f2fe';
+      status.style.textAlign = 'center';
+      status.innerText = '⏳ AI กำลังจัดกลุ่มเงินของคุณ...';
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({ source: 'web', message: input.value })
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+          const aiItems = result.data;
+          
+          aiItems.forEach(item => {
+            // ปรับ LSS อัตโนมัติถ้า AI ตอบเป็น LTSPS
+            let jType = item.jar_type;
+            if (jType === 'LTSPS') jType = 'LSS';
+
+            myData.push({
+              id: "tx_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9), 
+              isoDate: new Date().toISOString(), 
+              date: new Date().toLocaleString('th-TH'), 
+              item: item.item,
+              amount: item.amount,
+              type: item.type,
+              jar_type: jType
+            });
+          });
+          localStorage.setItem('6jars_' + currentUser, JSON.stringify(myData));
+          
+          status.style.color = '#047857';
+          status.style.backgroundColor = '#d1fae5';
+          status.innerText = '✅ บันทึกสำเร็จลงโหลแล้ว!';
+          input.value = '';
+          updateDashboard();
+        } else {
+          status.style.color = '#b91c1c';
+          status.style.backgroundColor = '#fee2e2';
+          status.innerText = '❌ ' + result.message;
+        }
+      } catch (error) {
+        status.style.color = '#b91c1c';
+        status.style.backgroundColor = '#fee2e2';
+        status.innerText = '❌ ล้มเหลว: โปรดตรวจสอบ SCRIPT_URL';
+      }
+    }
+
+    function updateDashboard() {
+      const filterVal = document.getElementById('monthFilter').value;
+      const parts = filterVal.split("-");
+      const targetYear = parseInt(parts.at(0));
+      const targetMonth = parseInt(parts.at(1));
+
+      let pastIncome = 0;
+      let pastExpense = 0;
+      let currentIncome = 0;
+      let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LSS: 0, GIVE: 0 };
+
+      myData.forEach(t => {
+        const tDate = t.isoDate ? new Date(t.isoDate) : new Date();
+        const tMonthTime = new Date(tDate.getFullYear(), tDate.getMonth(), 1).getTime();
+        const targetMonthTime = new Date(targetYear, targetMonth, 1).getTime();
+        
+        let jType = t.jar_type;
+        if(jType === 'LTSPS') jType = 'LSS'; // รองรับข้อมูลเก่า
+
+        if (tMonthTime < targetMonthTime) {
+          if (jType === 'INCOME' || t.type === 'Income') pastIncome += t.amount;
+          else pastExpense += t.amount;
+        } else if (tMonthTime === targetMonthTime) {
+          if (jType === 'INCOME' || t.type === 'Income') currentIncome += t.amount;
+          else if (jars[jType] !== undefined) jars[jType] += t.amount;
+        }
+      });
+
+      let carriedOver = pastIncome - pastExpense;
+      if (carriedOver < 0) carriedOver = 0;
+      let totalIncome = currentIncome + carriedOver;
+
+      let necPercent = totalIncome > 0 ? ((jars.NEC / totalIncome) * 100).toFixed(1) : "0.0";
+      let playPercent = totalIncome > 0 ? ((jars.PLAY / totalIncome) * 100).toFixed(1) : "0.0";
+      let ffaPercent = totalIncome > 0 ? ((jars.FFA / totalIncome) * 100).toFixed(1) : "0.0";
+      let eduPercent = totalIncome > 0 ? ((jars.EDU / totalIncome) * 100).toFixed(1) : "0.0";
+      let lssPercent = totalIncome > 0 ? ((jars.LSS / totalIncome) * 100).toFixed(1) : "0.0";
+      let givePercent = totalIncome > 0 ? ((jars.GIVE / totalIncome) * 100).toFixed(1) : "0.0";
+
+      document.getElementById('valCarried').innerText = carriedOver.toLocaleString() + ' ฿';
+      document.getElementById('valCurrentIncome').innerText = currentIncome.toLocaleString() + ' ฿';
+      document.getElementById('valIncome').innerText = totalIncome.toLocaleString() + ' ฿';
+      
+      document.getElementById('valNEC').innerHTML = jars.NEC.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + necPercent + '%)</span>';
+      document.getElementById('valPLAY').innerHTML = jars.PLAY.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + playPercent + '%)</span>';
+      document.getElementById('valFFA').innerHTML = jars.FFA.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + ffaPercent + '%)</span>';
+      document.getElementById('valEDU').innerHTML = jars.EDU.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + eduPercent + '%)</span>';
+      document.getElementById('valLSS').innerHTML = jars.LSS.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + lssPercent + '%)</span>';
+      document.getElementById('valGIVE').innerHTML = jars.GIVE.toLocaleString() + ' ฿ <span class="text-xs font-normal text-slate-400">(' + givePercent + '%)</span>';
+
+      let histHtml = "";
+      const recent = myData.slice().reverse();
+      recent.forEach(t => {
+        let jType = t.jar_type;
+        if (jType === 'LTSPS') jType = 'LSS';
+        
+        let isInc = (jType === 'INCOME' || t.type === 'Income');
+        let color = isInc ? 'text-emerald-500' : 'text-rose-500';
+        let sign = isInc ? '+' : '-';
+        let showDate = t.date || "ไม่ระบุวันที่";
+        
+        histHtml += `<li class="py-3 flex justify-between items-center">
+          <div class="flex-1 pr-4 min-w-0">
+            <div class="font-medium text-sm text-slate-800 truncate">${t.item}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${showDate} | โหล: ${jType}</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="${color} font-semibold text-sm">${sign}${t.amount.toLocaleString()} ฿</div>
+            <div class="flex gap-2">
+              <button onclick="openEditModal('${t.id}')" class="p-1 text-sky-500 hover:bg-sky-50 rounded transition" title="แก้ไข">✏️</button>
+              <button onclick="deleteTransaction('${t.id}')" class="p-1 text-rose-500 hover:bg-rose-50 rounded transition" title="ลบ">🗑️</button>
+            </div>
+          </div>
+        </li>`;
+      });
+      document.getElementById('historyList').innerHTML = histHtml || "<li class='py-4 text-center text-slate-400 text-sm'>ยังไม่มีรายการ</li>";
+    }
+
+    function deleteTransaction(id) {
+      if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้อย่างถาวร?")) {
+        myData = myData.filter(function(t) { return t.id !== id; });
+        localStorage.setItem('6jars_' + currentUser, JSON.stringify(myData));
+        updateDashboard();
+      }
+    }
+
+    function openEditModal(id) {
+      const tx = myData.find(function(t) { return t.id === id; });
+      if (!tx) return;
+      document.getElementById('editTxId').value = tx.id;
+      document.getElementById('editItem').value = tx.item;
+      document.getElementById('editAmount').value = tx.amount;
+      document.getElementById('editJarType').value = tx.jar_type === 'LTSPS' ? 'LSS' : tx.jar_type;
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+
+    function saveEdit() {
+      const id = document.getElementById('editTxId').value;
+      const item = document.getElementById('editItem').value.trim();
+      const amount = parseFloat(document.getElementById('editAmount').value);
+      const jarType = document.getElementById('editJarType').value;
+
+      if (!item || isNaN(amount) || amount <= 0) return;
+
+      myData = myData.map(function(t) {
+        if (t.id === id) {
+          t.item = item; t.amount = amount; t.jar_type = jarType;
+          t.type = (jarType === 'INCOME') ? 'Income' : 'Expense';
+        }
+        return t;
+      });
+      localStorage.setItem('6jars_' + currentUser, JSON.stringify(myData));
+      closeEditModal(); updateDashboard();
+    }
   </script>
 </body>
 </html>
