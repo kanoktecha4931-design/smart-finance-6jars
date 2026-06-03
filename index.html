@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial AI Analysis - 6 Jars</title>
+    <title>Financial AI Analysis</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -17,7 +17,6 @@
             align-items: center;
         }
 
-        /* สไตล์สำหรับปุ่มย้อนกลับ */
         .btn-back {
             align-self: flex-start;
             background-color: transparent;
@@ -91,7 +90,6 @@
             border-radius: 4px;
         }
 
-        /* ส่วน Loading Screen */
         #premium-loading-screen {
             position: absolute; 
             top: 0; left: 0; width: 100%; height: 100%;
@@ -152,18 +150,17 @@
 </head>
 <body>
 
-    <!-- ปุ่มย้อนกลับ -->
     <button class="btn-back" onclick="goBackToJars()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        กลับไปหน้าบันทึก 6 Jars
+        กลับไปหน้าหลัก
     </button>
 
     <h2 class="header-title">ระบบวิเคราะห์การเงินอัจฉริยะ</h2>
 
     <div class="card">
-        <h3>สรุปผลประจำเดือน (6 Jars)</h3>
+        <h3>สรุปผลประจำเดือนเชิงลึก</h3>
         <p style="color: #888; font-size: 14px; margin-bottom: 30px;">
-            ระบบจะดึงยอดรวม 6 Jars ของเดือนนี้เทียบกับเดือนที่ผ่านมา เพื่อให้คำแนะนำที่แม่นยำ
+            AI จะดึงประวัติการใช้จ่ายจริง เช่น ค่ากาแฟ ค่าอาหาร เพื่อนำมาวิเคราะห์และให้คำแนะนำแบบเฉพาะตัว
         </p>
         
         <button class="btn-analyze" id="btn-start" onclick="startAnalysis()">✨ เริ่มการวิเคราะห์ AI</button>
@@ -176,7 +173,7 @@
             <img src="https://cdn-icons-png.flaticon.com/512/10398/10398012.png" alt="AI Character" class="cartoon-character">
             
             <div class="text-container">
-                <p id="fading-text" class="fade-in">กำลังรวมข้อมูล 6 Jars ของคุณ...</p>
+                <p id="fading-text" class="fade-in">กำลังดึงประวัติการใช้จ่ายของคุณ...</p>
             </div>
             
             <div class="premium-spinner"></div>
@@ -184,14 +181,12 @@
     </div>
 
     <script>
-        // *** ใส่ URL ของ Web App ที่ได้จาก Google Apps Script ตรงนี้ ***
+        // *** อย่าลืมนำ URL ของ Web App อันใหม่ (ที่ Deploy เป็น New Version แล้ว) มาใส่ตรงนี้นะคะ ***
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8vOOS8rq4K4iOaOEFCkej7ogbHsnFcvKBAofHl1v4c5nyQZ3HvM8zogHE-RFXdKah/exec";
 
         function goBackToJars() {
-            // คำสั่งนี้จะพาย้อนกลับไปหน้าที่แล้วในเบราว์เซอร์
-            // หากต้องการระบุ URL ให้เจาะจง ให้ลบ window.history.back(); ออก แล้วใช้บรรทัดล่างแทน
-            window.history.back(); 
-            // window.location.href = 'ใส่ลิงก์หน้าบันทึกหลักของคุณที่นี่';
+            // คำสั่งให้ลิงก์กลับไปที่หน้า index.html 
+            window.location.href = 'index.html'; 
         }
 
         function startAnalysis() {
@@ -202,8 +197,8 @@
             const btnStart = document.getElementById('btn-start');
 
             const loadingTexts = [
-                "กำลังรวมข้อมูล 6 Jars ของคุณ...",
-                "วิเคราะห์แนวโน้มกับเดือนที่ผ่านมา...",
+                "กำลังดึงประวัติการใช้จ่ายของคุณ...",
+                "วิเคราะห์แยกตามโหล 6 Jars...",
                 "ประมวลผลเชิงลึกด้วย AI...",
                 "เตรียมคำแนะนำแบบ NotebookLM..."
             ];
