@@ -18,32 +18,33 @@
         async function startAnalysis() {
             const btn = document.getElementById('btn-run');
             const resBox = document.getElementById('result-box');
-            btn.innerText = "กำลังดึงข้อมูลและวิเคราะห์...";
             
-            // ค้นหาคีย์ทั้งหมดใน LocalStorage ที่ขึ้นต้นด้วย '6jars_'
-            let activeUser = "";
-            for (let i = 0; i < localStorage.length; i++) {
-                let key = localStorage.key(i);
-                if (key.startsWith('6jars_')) { activeUser = key.replace('6jars_', ''); break; }
-            }
-
-            const myData = JSON.parse(localStorage.getItem('6jars_' + activeUser) || "[]");
-            
-            if (myData.length === 0) {
-                resBox.innerHTML = "<p class='text-red-500'>ไม่พบข้อมูลในเครื่อง กรุณาบันทึกข้อมูลในหน้าหลักก่อนค่ะ</p>";
-                btn.innerText = "เริ่มการวิเคราะห์";
+            // ใช้ window.opener เพื่อดึงข้อมูลจากหน้าหลัก (index.html) โดยตรง
+            if (!window.opener || !window.opener.myData) {
+                resBox.innerHTML = "<p class='text-red-500'>ไม่พบข้อมูล! ตรวจสอบว่าหน้าหลักเปิดอยู่ในเบราว์เซอร์เดียวกัน และคุณได้ล็อกอินแล้ว</p>";
                 return;
             }
 
-            // กรองเดือนพฤษภาคม 2569
+            const myData = window.opener.myData;
+            btn.innerText = "กำลังวิเคราะห์...";
+
+            // กรองเดือนพฤษภาคม 2569 (index 4)
             let filteredTx = myData.filter(t => {
                 const d = new Date(t.isoDate);
                 return d.getMonth() === 4 && d.getFullYear() === 2026;
             });
 
-            // คำนวณใหม่ให้แม่นยำ
+            if (filteredTx.length === 0) {
+                resBox.innerHTML = "<p class='text-red-500'>ไม่พบข้อมูลรายการในเดือนพฤษภาคม 2569</p>";
+                return;
+            }
+
+            // คำนวณยอดโหล (ใช้ LSS แทน LTSPS)
             let jars = { NEC: 0, PLAY: 0, FFA: 0, EDU: 0, LSS: 0, GIVE: 0 };
-            filteredTx.forEach(t => { if(jars.hasOwnProperty(t.jar_type)) jars[t.jar_type] += t.amount; });
+            filteredTx.forEach(t => { 
+                let jar = t.jar_type === 'LTSPS' ? 'LSS' : t.jar_type;
+                if(jars.hasOwnProperty(jar)) jars[jar] += t.amount; 
+            });
 
             try {
                 const res = await fetch(SCRIPT_URL, {
