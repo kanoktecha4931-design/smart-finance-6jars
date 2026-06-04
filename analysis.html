@@ -46,7 +46,72 @@
         </div>
 
         <div id="premium-loading-screen">
-           <img src="https://cdn-icons-png.flaticon.com/512/5732/5732114.png" alt="Money Jar" class="cartoon-character">
+          <!-- เริ่มต้นโค้ดรูปภาพ SVG มาสคอตการเงิน -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="130px" height="130px" class="cartoon-character" style="box-shadow: none; border-radius: 0;">
+  
+  <!-- เงาใต้ตัวละคร -->
+  <ellipse cx="100" cy="180" rx="60" ry="8" fill="rgba(0,0,0,0.1)"/>
+
+  <!-- แบงก์ดอลลาร์สีเขียว (ด้านซ้ายหลัง) -->
+  <g transform="translate(50, 95) rotate(-25)">
+    <rect x="-35" y="-20" width="70" height="45" rx="4" fill="#a8e6cf" stroke="#10ac84" stroke-width="4"/>
+    <text x="0" y="8" font-family="sans-serif" font-weight="900" font-size="24" fill="#10ac84" text-anchor="middle">$</text>
+    <line x1="-25" y1="-10" x2="-20" y2="-10" stroke="#10ac84" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="10" x2="25" y2="10" stroke="#10ac84" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- แบงก์ดอลลาร์สีเขียว (ด้านขวาหลัง) -->
+  <g transform="translate(150, 95) rotate(25)">
+    <rect x="-35" y="-20" width="70" height="45" rx="4" fill="#a8e6cf" stroke="#10ac84" stroke-width="4"/>
+    <text x="0" y="8" font-family="sans-serif" font-weight="900" font-size="24" fill="#10ac84" text-anchor="middle">$</text>
+    <line x1="-25" y1="-10" x2="-20" y2="-10" stroke="#10ac84" stroke-width="3" stroke-linecap="round"/>
+    <line x1="20" y1="10" x2="25" y2="10" stroke="#10ac84" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- จุก/มงกุฎ บนหัว -->
+  <path d="M 85 45 L 100 20 L 115 45 Z" fill="#ffd32a" stroke="#ffa801" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- ลำตัว (โหลเงินกลมสีเหลือง) -->
+  <circle cx="100" cy="110" r="55" fill="#ffd32a" stroke="#ffa801" stroke-width="5"/>
+
+  <!-- ดวงตาเบิกโพลง -->
+  <circle cx="80" cy="100" r="8" fill="#1e272e"/>
+  <circle cx="77" cy="97" r="3" fill="#ffffff"/>
+  <circle cx="120" cy="100" r="8" fill="#1e272e"/>
+  <circle cx="117" cy="97" r="3" fill="#ffffff"/>
+
+  <!-- แก้มชมพู -->
+  <circle cx="65" cy="115" r="7" fill="#ff5e57" opacity="0.6"/>
+  <circle cx="135" cy="115" r="7" fill="#ff5e57" opacity="0.6"/>
+
+  <!-- รอยยิ้มกว้าง -->
+  <path d="M 85 115 Q 100 135 115 115 Z" fill="#ff5e57" stroke="#ff3f34" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- ทองคำแท่ง/ปึกเงิน (ด้านล่าง) -->
+  <g transform="translate(100, 165)">
+    <rect x="-40" y="-15" width="80" height="20" rx="3" fill="#ffdd59" stroke="#ffa801" stroke-width="4"/>
+    <rect x="-40" y="5" width="80" height="20" rx="3" fill="#ffdd59" stroke="#ffa801" stroke-width="4"/>
+    <rect x="-10" y="-15" width="20" height="40" fill="#05c46b" stroke="#009432" stroke-width="4"/>
+  </g>
+
+  <!-- เหรียญชมพู (ขวาบน) -->
+  <g transform="translate(145, 45)">
+    <circle cx="0" cy="0" r="16" fill="#ffb8b8" stroke="#ff3838" stroke-width="4"/>
+    <text x="0" y="6" font-family="sans-serif" font-weight="900" font-size="16" fill="#ff3838" text-anchor="middle">$</text>
+  </g>
+  
+  <!-- เหรียญชมพู (ซ้ายล่าง) -->
+  <g transform="translate(40, 140)">
+    <circle cx="0" cy="0" r="13" fill="#ffb8b8" stroke="#ff3838" stroke-width="4"/>
+    <text x="0" y="5" font-family="sans-serif" font-weight="900" font-size="13" fill="#ff3838" text-anchor="middle">$</text>
+  </g>
+
+  <!-- ประกายวิบวับ (ดวงดาว) -->
+  <path d="M 170 75 L 173 82 L 180 85 L 173 88 L 170 95 L 167 88 L 160 85 L 167 82 Z" fill="#ffd32a"/>
+  <path d="M 40 50 L 42 55 L 47 57 L 42 59 L 40 64 L 38 59 L 33 57 L 38 55 Z" fill="#ffd32a"/>
+
+</svg>
+<!-- สิ้นสุดโค้ดรูปภาพ SVG -->
             <div class="text-container">
                 <p id="fading-text" class="fade-in">กำลังรวมข้อมูล 6 Jars ของคุณ...</p>
             </div>
