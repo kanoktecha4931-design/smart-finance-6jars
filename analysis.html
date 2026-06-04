@@ -102,13 +102,18 @@
                 const selectedMonthTime = new Date(targetYear, targetMonth, 1).getTime();
 
                 let jType = t.jar_type;
-                if(jType === 'LTSPS') jType = 'LSS';
+                if(jType === 'LTSPS') jType = 'LSS'; // แปลงข้อมูลเก่าให้เป็น LSS
 
                 if (tMonthTime < selectedMonthTime) {
                     if (jType === 'INCOME' || t.type === 'Income') pastIncome += t.amount;
                     else pastExpense += t.amount;
                 } else if (tMonthTime === selectedMonthTime) {
-                    filteredTx.push(t); 
+                    
+                    // สร้างข้อมูลใหม่จำลองให้ AI เห็นเป็น LSS ป้องกันความสับสน
+                    let aiTx = JSON.parse(JSON.stringify(t)); 
+                    aiTx.jar_type = jType;
+                    filteredTx.push(aiTx); 
+                    
                     if (jType === 'INCOME' || t.type === 'Income') currentIncome += t.amount;
                     else if (jars[jType] !== undefined) jars[jType] += t.amount;
                 }
@@ -132,7 +137,7 @@
                 play: jars.PLAY, play_percent: playPercent,
                 ffa: jars.FFA, ffa_percent: ffaPercent,
                 edu: jars.EDU, edu_percent: eduPercent,
-                ltsps: jars.LSS, ltsps_percent: lssPercent, 
+                lss: jars.LSS, lss_percent: lssPercent, // ✅ อัปเดตตัวแปรเป็น lss ให้ตรงกับ Apps Script
                 give: jars.GIVE, give_percent: givePercent
             };
 
